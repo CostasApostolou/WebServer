@@ -1,12 +1,11 @@
 import java.io.File
-import java.util.*
 
 class HttpReqHeader(val headerAsString: String) {
 
     var method: String = "GET"
     var uri: String = "/"
     var protocol: String = "HTTP/1.1"
-    var map = mutableMapOf<String, String>()
+    var map = mapOf<String, String>()
     var res: Results = Results.OK
 
     fun decode(): Boolean {
@@ -19,7 +18,6 @@ class HttpReqHeader(val headerAsString: String) {
                 .filter { it.size == 2 }
                 .map { it[0] to it[1] }
                 .toMap()
-                .let { HashMap(it) }
 
         return res == Results.OK
     }

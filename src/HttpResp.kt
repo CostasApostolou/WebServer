@@ -1,10 +1,6 @@
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.time.LocalDateTime
+import java.nio.file.*
+import java.time.*
 
-/**
- * Created by costas on 11.11.16.
- */
 class HttpResp {
 
     var statusCode: String = ""
