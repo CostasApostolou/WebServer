@@ -81,7 +81,7 @@ class AppKtTest {
 
 	@Test
 	fun testJPEG() {
-		val expectedImage = openResource("/images/booth.jpeg")
+		val expectedImage = HttpRequestProcessorImpl().openResource("/images/booth.jpeg")
 
 		val respTokens = mutableListOf<String>()
 		var respBytes = byteArrayOf()
@@ -109,7 +109,7 @@ class AppKtTest {
 
 	@Test
 	fun testBMP() {
-		val expectedImage = openResource("/images/lena.bmp")
+		val expectedImage = HttpRequestProcessorImpl().openResource("/images/lena.bmp")
 
 		val respTokens = mutableListOf<String>()
 		var respBytes = byteArrayOf()
@@ -137,7 +137,7 @@ class AppKtTest {
 
 	@Test
 	fun testPNG() {
-		val expectedImage = openResource("/images/logo.png")
+		val expectedImage = HttpRequestProcessorImpl().openResource("/images/logo.png")
 
 		val respTokens = mutableListOf<String>()
 		var respBytes = byteArrayOf()
@@ -163,7 +163,7 @@ class AppKtTest {
 
 	@Test
 	fun testBadRequest() {
-		val expectedImage = openResource("/images/400-badreq.jpeg")
+		val expectedImage = HttpRequestProcessorImpl().openResource("/images/400-badreq.jpeg")
 
 		val respTokens = mutableListOf<String>()
 		var respBytes = byteArrayOf()
@@ -190,7 +190,7 @@ class AppKtTest {
 
 	@Test
 	fun testPageNotFound() {
-		val expectedImage = openResource("/images/404-error.jpeg")
+		val expectedImage = HttpRequestProcessorImpl().openResource("/images/404-error.jpeg")
 
 		val respTokens = mutableListOf<String>()
 		var respBytes = byteArrayOf()
@@ -212,52 +212,6 @@ class AppKtTest {
 
 		val receivedImage = respBytes.copyOfRange(respBytes.size - expectedImage.size, respBytes.size)
 		assertArrayEquals(expectedImage, receivedImage)
-	}
-
-	@Test
-	fun testNotImplemented() {
-		val expectedString = Results.NOT_IMPLEMENTED.code + " " + Results.NOT_IMPLEMENTED.reason
-
-		val respTokens = mutableListOf<String>()
-		Socket("localhost", PORT).use {
-			val wr = PrintWriter(it.outputStream)
-			wr.print(prepareHttpRequest(meth = "POST"))
-			wr.flush()
-			respTokens.addAll(String(getHttpResp(it)).split("\r\n"))
-		}
-
-		assertEquals(7, respTokens.size)
-		assertEquals("HTTP/1.1 501 Not Implemented", respTokens[0])
-		assertTrue(respTokens[1].startsWith("Date:"))
-		assertEquals("Server: Costas", respTokens[2])
-		assertTrue(respTokens[3].startsWith("Content-Length:"))
-		assertEquals(expectedString.length.toString(), respTokens[3].split(": ")[1])
-		assertEquals("Content-Type: text/plain", respTokens[4])
-		assertEquals("", respTokens[5])
-		assertEquals(expectedString, respTokens[6])
-	}
-
-	@Test
-	fun testHttpVerNotSupported() {
-		val expectedString = "Requested HTTP version not supported"
-
-		val respTokens = mutableListOf<String>()
-		Socket("localhost", PORT).use {
-			val wr = PrintWriter(it.outputStream)
-			wr.print(prepareHttpRequest(prot = "HTTP"))
-			wr.flush()
-			respTokens.addAll(String(getHttpResp(it)).split("\r\n"))
-		}
-
-		assertEquals(7, respTokens.size)
-		assertEquals("HTTP/1.1 505 HTTP Version Not Supported", respTokens[0])
-		assertTrue(respTokens[1].startsWith("Date:"))
-		assertEquals("Server: Costas", respTokens[2])
-		assertTrue(respTokens[3].startsWith("Content-Length:"))
-		assertEquals(expectedString.length.toString(), respTokens[3].split(": ")[1])
-		assertEquals("Content-Type: text/plain", respTokens[4])
-		assertEquals("", respTokens[5])
-		assertEquals(expectedString, respTokens[6])
 	}
 
 	@Test
@@ -385,13 +339,10 @@ class AppKtTest {
 		sock2.close()
 	}
 
-	private fun prepareHttpRequest(meth: String = "GET", resource: String = "/", prot: String = "HTTP/1.1") : HttpReq{
-		val req = HttpReq("$meth $resource $prot\r\n")
-		req.header.method = meth
-		req.header.uri = resource
-		req.header.protocol = prot
-		return req
+	private fun prepareHttpRequest(meth: String = "GET", resource: String = "/", prot: String = "HTTP/1.1") : String {
+		return "$meth $resource $prot\r\nkey: value\r\n\r\n"
 	}
+
 
 	private fun getHttpResp(sock: Socket): ByteArray = sock.inputStream.readBytes()
 }
