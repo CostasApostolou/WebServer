@@ -1,41 +1,40 @@
+import java.io.*
 import java.net.*
 
-
-private const val PORT = 12345
-
-class Server(val remote: Socket) : Runnable {
-
-	override fun run() {
-
-		println("Connection established")
-		remote.use {
-
-			try{
-				val req = HttpRequestParserImpl().parse(it.inputStream)
-				val resp = HttpRequestProcessorImpl().prepareHttpResponse(req)
-				HttpResponseDispatcherImpl().sendHttpResponse(it.outputStream, resp)
-			} catch (rte : RuntimeException){
-				when (rte.message){
-					Results.PAGE_NOT_FOUND.reason -> HttpResponseDispatcherImpl().sendPageNotFoundResponse(it.outputStream)
-					Results.BAD_REQUEST.reason -> HttpResponseDispatcherImpl().sendBadRequestResponse(it.outputStream)
-					else -> println("here" + rte.message)
-				}
-			}
-		}
-	}
+interface HttpRequestParser {
+	fun parse(inputStream: InputStream): HttpReq
 }
 
+interface HttpRequestProcessor {
+	fun prepareHttpResponse(req: HttpReq): HttpResp
+}
 
-fun main(args: Array<String>) {
+interface HttpResponseDispatcher {
+	fun sendHttpResponse(outputStream: OutputStream, resp: HttpResp)
+	fun sendBadRequestResponse(outputStream: OutputStream)
+	fun sendPageNotFoundResponse(outputStream: OutputStream)
+	fun sendInternalError(outputStream: OutputStream)
+}
 
-    val serverConnect = ServerSocket(PORT)
+class Server(val port: Int,
+			 val parser: HttpRequestParser = HttpRequestParserImpl(),
+			 val processor: HttpRequestProcessor = HttpRequestProcessorImpl(),
+			 val dispatcher: HttpResponseDispatcher = HttpResponseDispatcherImpl()) {
 
-    println("Web server is listening on port " + PORT)
+	private val threadPool = mutableListOf<Thread>()
 
-    while (true) {
-        val socket = serverConnect.accept()
-        val thread = Thread(Server(socket))
-        thread.start()
-    }
+	fun startServer(){
+		val serverConnect = ServerSocket(port)
+		println("Web server is listening on port " + port)
+		while (true) {
+			val socket = serverConnect.accept()
+			val handler = HttpRequestHandler(socket, parser, processor, dispatcher)
+			val thread = Thread(handler)
+			thread.start()
+			threadPool.add(thread)
+		}
+	}
+
+	fun stopServer() = threadPool.forEach(Thread::join)
 
 }

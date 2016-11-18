@@ -4,51 +4,52 @@ import java.time.*
 
 class HttpRequestProcessorImpl : HttpRequestProcessor {
 
-	private val resp = HttpResp()
-
 	override fun prepareHttpResponse(req: HttpReq): HttpResp {
 
+		val resp = HttpResp()
+
 		when (req.header.method) {
-			Methods.HEAD.name -> handleHead(req)
-			Methods.GET.name -> handleGet(req)
+			Methods.HEAD.name -> handleHead(req, resp)
+			Methods.GET.name -> handleGet(req, resp)
 		}
 
 		return resp
 	}
 
-	private fun handleGet(req: HttpReq) {
-		handleHead(req)
+	private fun handleGet(req: HttpReq, resp: HttpResp) {
+		handleHead(req, resp)
 
 		val resource = req.header.uri
 
-		when (resource){
-			"/" -> addBodyToResp("This is the root folder".toByteArray(), "text/plain")
-			"/hello" -> addBodyToResp("<html><body><h1>Hello, World!</h1></body></html>".toByteArray(), "text/html")
-			else -> addBodyToResp(openResource(resource), getResourceType(resource))
+		when (resource) {
+			"/" -> addBody("This is the root folder".toByteArray(), "text/plain", resp)
+			"/hello" -> addBody("<html><body><h1>Hello, World!</h1></body></html>".toByteArray(), "text/html", resp)
+			"internal_error" -> addBody("<html><body><h1>${Results.INTERNAL_ERROR.code} ${Results.INTERNAL_ERROR.reason}</h1><h2>An internal error occurred. Sorry for the inconvenience</h2></body></html>".toByteArray(), "text/html", resp)
+			else -> addBody(openResource(resource), getResourceType(resource), resp)
 		}
 	}
 
-	private fun handleHead(req: HttpReq) {
+	private fun handleHead(req: HttpReq, resp: HttpResp) {
 
-		prepareStatusLine(req)
-		addDateToResp()
-		addServerToResp()
+		prepareStatusLine(req, resp)
+		addDate(resp)
+		addServer(resp)
 	}
 
-	private fun prepareStatusLine(req: HttpReq) {
+	private fun prepareStatusLine(req: HttpReq, resp: HttpResp) {
 		resp.protocol = req.header.protocol
 		resp.result = Results.OK
 	}
 
-	private fun addDateToResp() {
+	private fun addDate(resp: HttpResp) {
 		resp.headerFields.add("Date: " + LocalDateTime.now())
 	}
 
-	private fun addServerToResp() {
+	private fun addServer(resp: HttpResp) {
 		resp.headerFields.add("Server: Costas")
 	}
 
-	private fun addBodyToResp(body: ByteArray, type: String) {
+	private fun addBody(body: ByteArray, type: String, resp: HttpResp) {
 		resp.headerFields.add("Content-Length: " + body.size)
 		resp.headerFields.add("Content-Type: " + type)
 		resp.body = body
@@ -64,16 +65,13 @@ class HttpRequestProcessorImpl : HttpRequestProcessor {
 				else -> "text/plain"
 			}
 
-	fun openResource(resource: String) : ByteArray {
+	fun openResource(resource: String): ByteArray {
 		try {
 			return Files.readAllBytes(Paths.get(System.getProperty("user.dir"), resource))
-		} catch (e : IOException){
+		} catch (e: IOException) {
 			throw RuntimeException(Results.PAGE_NOT_FOUND.reason)
 		}
 	}
-
-
-
 }
 
 

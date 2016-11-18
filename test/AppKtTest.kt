@@ -8,24 +8,18 @@ private const val PORT = 12345
 
 class AppKtTest {
 
-//    lateinit var socket : ServerSocket
-//
-//    @Before
-//    fun setup() {
-//        socket = ServerSocket(PORT)
-//        thread {
-//            while (true) {
-//                val accept = socket.accept()
-//                val thread = Thread(Server(accept))
-//                thread.start()
-//            }
-//        }
-//    }
-//
-//    @After
-//    fun destroy() {
-//        socket.close()
-//    }
+
+
+	companion object {
+		private val server = Server(PORT)
+		@BeforeClass @JvmStatic fun start() {
+			thread { server.startServer() }
+		}
+
+		@AfterClass @JvmStatic fun stop() {
+			server.stopServer()
+		}
+	}
 
 	@Test
 	fun testConnectivity() {
@@ -339,7 +333,7 @@ class AppKtTest {
 		sock2.close()
 	}
 
-	private fun prepareHttpRequest(meth: String = "GET", resource: String = "/", prot: String = "HTTP/1.1") : String {
+	private fun prepareHttpRequest(meth: String = "GET", resource: String = "/", prot: String = "HTTP/1.1"): String {
 		return "$meth $resource $prot\r\nkey: value\r\n\r\n"
 	}
 

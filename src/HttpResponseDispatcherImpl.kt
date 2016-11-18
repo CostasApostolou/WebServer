@@ -21,4 +21,11 @@ class HttpResponseDispatcherImpl : HttpResponseDispatcher{
 		sendHttpResponse(outputStream, resp)
 	}
 
+	override fun sendInternalError(outputStream: OutputStream) {
+		val req = HttpReq(HttpReqHeader("GET", "internal_error", "HTTP/1.1", mapOf()), byteArrayOf())
+		val resp = HttpRequestProcessorImpl().prepareHttpResponse(req)
+		resp.result = Results.INTERNAL_ERROR
+		sendHttpResponse(outputStream, resp)
+	}
+
 }
