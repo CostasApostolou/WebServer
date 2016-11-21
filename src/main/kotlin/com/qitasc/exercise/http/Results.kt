@@ -1,3 +1,4 @@
+package com.qitasc.exercise.http
 
 enum class Results(val code: String, val reason: String) {
 	OK("200", "OK"),

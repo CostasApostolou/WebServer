@@ -1,11 +1,23 @@
+package com.qitasc.exercise.http
+
+import com.qitasc.exercise.server.*
 import java.io.*
 import java.nio.file.*
 import java.time.*
 
-class HttpRequestProcessorImpl : HttpRequestProcessor {
+class Resource (val txt : String, val type : String)
 
-	override fun prepareHttpResponse(req: HttpReq): HttpResp {
+class HttpRequestProcessorImpl : Processor {
 
+	private val routes = mutableMapOf<String, Resource>()
+
+	fun registerRoute(url : String, resource : Resource){
+		routes.put(url, resource)
+	}
+
+	override fun prepareResponse(req: Request): HttpResp {
+
+		req as HttpReq
 		val resp = HttpResp()
 
 		when (req.header.method) {
@@ -21,12 +33,18 @@ class HttpRequestProcessorImpl : HttpRequestProcessor {
 
 		val resource = req.header.uri
 
-		when (resource) {
-			"/" -> addBody("This is the root folder".toByteArray(), "text/plain", resp)
-			"/hello" -> addBody("<html><body><h1>Hello, World!</h1></body></html>".toByteArray(), "text/html", resp)
-			"internal_error" -> addBody("<html><body><h1>${Results.INTERNAL_ERROR.code} ${Results.INTERNAL_ERROR.reason}</h1><h2>An internal error occurred. Sorry for the inconvenience</h2></body></html>".toByteArray(), "text/html", resp)
-			else -> addBody(openResource(resource), getResourceType(resource), resp)
+		if (routes.contains(resource)){
+			addBody(routes[resource]?.txt?.toByteArray(), routes[resource]?.type, resp)
+		} else {
+			addBody(openResource(resource), getResourceType(resource), resp)
 		}
+
+//		when (resource) {
+//			"/" -> addBody("This is the root folder".toByteArray(), "text/plain", resp)
+//			"/hello" -> addBody("<html><body><h1>Hello, World!</h1></body></html>".toByteArray(), "text/html", resp)
+//			"internal_error" -> addBody("<html><body><h1>${Results.INTERNAL_ERROR.code} ${Results.INTERNAL_ERROR.reason}</h1><h2>An internal error occurred. Sorry for the inconvenience</h2></body></html>".toByteArray(), "text/html", resp)
+//			else -> addBody(openResource(resource), getResourceType(resource), resp)
+//		}
 	}
 
 	private fun handleHead(req: HttpReq, resp: HttpResp) {
@@ -49,8 +67,8 @@ class HttpRequestProcessorImpl : HttpRequestProcessor {
 		resp.headerFields.add("Server: Costas")
 	}
 
-	private fun addBody(body: ByteArray, type: String, resp: HttpResp) {
-		resp.headerFields.add("Content-Length: " + body.size)
+	private fun addBody(body: ByteArray?, type: String?, resp: HttpResp) {
+		resp.headerFields.add("Content-Length: " + body?.size)
 		resp.headerFields.add("Content-Type: " + type)
 		resp.body = body
 	}

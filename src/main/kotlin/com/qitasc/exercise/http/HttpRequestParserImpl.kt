@@ -1,6 +1,9 @@
+package com.qitasc.exercise.http
+
+import com.qitasc.exercise.server.*
 import java.io.*
 
-class HttpRequestParserImpl : HttpRequestParser {
+class HttpRequestParserImpl : Parser{
 
 	override fun parse(inputStream: InputStream): HttpReq {
 

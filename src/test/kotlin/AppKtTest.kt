@@ -1,8 +1,10 @@
+import com.qitasc.exercise.http.*
 import org.junit.*
 import org.junit.Assert.*
 import java.io.*
 import java.net.*
 import kotlin.concurrent.*
+import com.qitasc.exercise.server.*
 
 private const val PORT = 12345
 
@@ -11,14 +13,22 @@ class AppKtTest {
 
 
 	companion object {
-		private val server = Server(PORT)
+		val parser = HttpRequestParserImpl()
+		val processor = HttpRequestProcessorImpl()
+		val dispatcher = HttpResponseDispatcherImpl()
+		val handlerBuilder = HandlerBuilderImpl(parser, processor, dispatcher)
+		private val server = Server(PORT, handlerBuilder)
 		@BeforeClass @JvmStatic fun start() {
+			processor.registerRoute("/", Resource("This is the root folder", "text/plain"))
+			processor.registerRoute("/hello", Resource("<html><body><h1>Hello, World!</h1></body></html>", "text/html"))
+			processor.registerRoute("internal_error", Resource("<html><body><h1>${Results.INTERNAL_ERROR.code} ${Results.INTERNAL_ERROR.reason}</h1><h2>An internal error occurred. Sorry for the inconvenience</h2></body></html>", "text/html"))
 			thread { server.startServer() }
 		}
 
 		@AfterClass @JvmStatic fun stop() {
 			server.stopServer()
 		}
+
 	}
 
 	@Test
@@ -36,7 +46,8 @@ class AppKtTest {
 			val wr = PrintWriter(it.outputStream)
 			wr.print(prepareHttpRequest())
 			wr.flush()
-			respTokens.addAll(String(getHttpResp(it)).split("\r\n"))
+			var v = String(getHttpResp(it))
+			respTokens.addAll(v.split("\r\n"))
 		}
 
 		assertEquals(7, respTokens.size)

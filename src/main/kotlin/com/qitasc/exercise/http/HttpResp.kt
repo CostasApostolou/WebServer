@@ -1,13 +1,16 @@
+package com.qitasc.exercise.http
+
+import com.qitasc.exercise.server.*
 import java.io.*
 
-class HttpResp {
+class HttpResp : Response{
 
     var result : Results = Results.OK
     var protocol: String = ""
     var headerFields = mutableListOf<String>()
     var body: ByteArray? = null
 
-    fun toBytes(): ByteArray {
+    override fun toBytes(): ByteArray {
         val sb = StringBuilder()
 
         sb.append("$protocol ${result.code} ${result.reason}\r\n")

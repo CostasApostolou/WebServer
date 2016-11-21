@@ -1,19 +1,22 @@
+package com.qitasc.exercise.http
+
+import com.qitasc.exercise.server.*
 import java.net.*
 
-class HttpRequestHandler(val remote : Socket,
-						 val parser: HttpRequestParser = HttpRequestParserImpl(),
-						 val processor: HttpRequestProcessor = HttpRequestProcessorImpl(),
-						 val dispatcher: HttpResponseDispatcher = HttpResponseDispatcherImpl()) : Runnable{
+class HttpRequestHandler(val remote : Socket?,
+						 val parser: HttpRequestParserImpl,
+						 val processor: HttpRequestProcessorImpl,
+						 val dispatcher: HttpResponseDispatcherImpl) : Handler{
 
 	override fun run() {
 
 		println("Connection established")
-		remote.use {
+		remote?.use {
 
 			try {
 				val req = parser.parse(it.inputStream)
-				val resp = processor.prepareHttpResponse(req)
-				dispatcher.sendHttpResponse(it.outputStream, resp)
+				val resp = processor.prepareResponse(req)
+				dispatcher.sendResponse(it.outputStream, resp)
 			} catch (rte: RuntimeException) {
 				when (rte.message) {
 					Results.PAGE_NOT_FOUND.reason -> dispatcher.sendPageNotFoundResponse(it.outputStream)
